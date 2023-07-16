@@ -1,2 +1,5 @@
-# boangisa_practice
+# 계정 관리
+## (1) root 이외의 UID가 0 금지
+### 1) 개요
+
 정보보안기사_실기
