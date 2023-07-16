@@ -110,9 +110,27 @@ cat /etc/passwd | egrep "^(찾을아이디)|^(찾을아이디)"
 2. shadow 패스워드를 사용하여 "/etc/shadow" 파일에 암호화된 패스워드가 저장되도록 하고 권한이 있는 사용자들만 읽을 수 있도록 제한함
 
 ### 2) 보안설정
+
+![image](https://github.com/zzzangmans1/boangisa_practice/assets/52357235/71ea172f-401c-4d53-a950-8a0122b894ad)
+
+```
+#cat /etc/passwd | grep "^root"
+```
+
 #### (가) 각 OS별 점검 방법
 ||OS별 점검 파일 위치 및 점검방법|
 |:-:|:-|
 |SOLARIS, LINUX|1. /etc/shadow 파일 존재 확인 </br>2. /etc/passwd 파일 내 두 번째 필드가 "x" 표시되는지 확인 </br>#cat /etc/passwd </br>root:x:0:0:root:/root:/bin/bash|
 |AIX|AIX 서버는 기본적으로 "/etc/security/passwd" 파일에 패스워드를 암호화하여 저장|
 |HP-UX|1.tcb 디렉터리 존재 확인 </br>2. /etc/passwd 파일 내 두 번째 필드가 "x" 표시되는지 확인 </br>HP-UX 서버는 Trusted Mode로 전환할 경우 패스워드를 암호화하여 "/tc/files/auth" 디렉터리에 계정 이니셜과 계정 이름에 따라 파일로 저장|
+
+## (7) Session Timeout 설정
+### 1) 개요
+1. 계정이 접속된 상태로 방치하면 권한이 없는 사용자에게 중요시스템이 노출되어 악의적인 목적으로 사용될 수 있으므로 일정 시간 이후 어떠한 이벤트가 발생하지 않으면 연결을 종료하는 Session Timeout 설정 필요
+
+### 2) 보안설정
+#### (가) 각 OS별 점검 방법
+||OS별 점검 파일 위치 및 점검방법|
+|:-:|:-|
+|SOLARIS, LINUX, AIX, HP-UX|<sh, ksh, bash 사용 시> </br>#cat /etc/profile(.profile) </br>TMOUT=600 </br>export TMOUT </br></br><csh 사용 시> </br>#cat /etc/csh.login 또는 cat /etc/csh.cshrc </br>set autologout=10|
+1. 세션 타임아웃을 600초(10분) 이하로 설정한다.
