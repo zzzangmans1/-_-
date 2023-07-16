@@ -49,7 +49,7 @@ cat /etc/passwd | egrep "^(찾을아이디)|^(찾을아이디)"
 ![image](https://github.com/zzzangmans1/boangisa_practice/assets/52357235/af892608-8467-4b96-a6df-85812d628598)
 
 ```
-#cat /etc/login.defs
+#cat /etc/login.defs | grep "PASS_MIN_LEN"
 ```
 
 #### (가) 각 OS별 패스워드 정책설정 파일 점검
@@ -67,14 +67,33 @@ cat /etc/passwd | egrep "^(찾을아이디)|^(찾을아이디)"
 2. 악의적인 사용자의 계속된 접속을 차단하기 위해 패스워드 최대 사용 기간을 설정하여 주기적으로 변경할 수 있도록 함
 
 ### 2) 보안설정
+
+![image](https://github.com/zzzangmans1/boangisa_practice/assets/52357235/94490af7-294b-42c6-bc59-3b461a27c28b)
+
+```
+#cat /etc/login.defs | grep "PASS_MAX_DAYS"
+```
+
 #### (가) 각 OS별 패스워드 정책설정 파일 점검
 ||OS별 점검 파일 위치 및 점검방법|
 |:-:|:-|
-|SOLARIS||
+|SOLARIS|#cat /etc/default/passwd </br>MAXWEEKS=12(단위 : 주)|
+|LINUX|#cat /etc/login.defs </br>PASS_MAX_DAYS 90(단위 : 일)|
+|AIX|#cat /etc/security/user </br>maxage=12(단위 : 주)|
+|HP-UX|#cat /etc/default/security </br>PASSWORD_MAXDAYS=90(단위 : 일)|
+1. 패스워드 정책설정 파일을 수정하여 패스워드 최대 사용 기간을 90일(12주)로 설정
+
+## (5) 패스워드 최소 사용기간 설정
+### 1) 개요
+1. 패스워드 최소 사용 기간을 설정하지 않으면 사용자에게 익숙한 패스워드로 변경할 수 있으며 이를 재사용함으로써 패스워드의 정기적인 변경은 무의미해질 수 있음
 
 ### 2) 보안설정
 
 ![image](https://github.com/zzzangmans1/boangisa_practice/assets/52357235/569adb37-c343-4d78-98f6-60ac04647b07)
+
+```
+#cat /etc/login.defs | grep "PASS_MIN_DAYS"
+```
 
 #### (가) 각 OS별 패스워드 정책설정 파일 점검
 ||OS별 점검 파일 위치 및 점검 방법
@@ -83,3 +102,17 @@ cat /etc/passwd | egrep "^(찾을아이디)|^(찾을아이디)"
 |LINUX|#cat /etc/login.defs </br>PASS_MIN_DAYS 1(단위 : 일)|
 |AIX|#cat /etc/security/user </br>minage=1(단위 : 주)|
 |HP-UX|#cat /etc/default/security </br>PASSWORD_MINDAYS=1(단위 : 일)|
+1. 패스워드 정책설정 파일을 수정하여 패스워드 최소 사용 기간을 1일(1주)로 설정
+
+## (6) 패스워드 파일 보호
+### 1) 개요
+1. 패스워드 정보를 평문으로 저장하는 경우 정보 유출 피해가 발생할 수 있으므로 패스워드를 암호화하여 보호하여야 함
+2. shadow 패스워드를 사용하여 "/etc/shadow" 파일에 암호화된 패스워드가 저장되도록 하고 권한이 있는 사용자들만 읽을 수 있도록 제한함
+
+### 2) 보안설정
+#### (가) 각 OS별 점검 방법
+||OS별 점검 파일 위치 및 점검방법|
+|:-:|:-|
+|SOLARIS, LINUX|1. /etc/shadow 파일 존재 확인 </br>2. /etc/passwd 파일 내 두 번째 필드가 "x" 표시되는지 확인 </br>#cat /etc/passwd </br>root:x:0:0:root:/root:/bin/bash|
+|AIX|AIX 서버는 기본적으로 "/etc/security/passwd" 파일에 패스워드를 암호화하여 저장|
+|HP-UX|1.tcb 디렉터리 존재 확인 </br>2. /etc/passwd 파일 내 두 번째 필드가 "x" 표시되는지 확인 </br>HP-UX 서버는 Trusted Mode로 전환할 경우 패스워드를 암호화하여 "/tc/files/auth" 디렉터리에 계정 이니셜과 계정 이름에 따라 파일로 저장|
