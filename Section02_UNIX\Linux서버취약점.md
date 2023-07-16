@@ -1,4 +1,4 @@
-# 계정 관리
+# 1. 계정 관리
 ## (1) root 이외의 UID가 0 금지
 ### 1) 개요
 
@@ -134,3 +134,54 @@ cat /etc/passwd | egrep "^(찾을아이디)|^(찾을아이디)"
 |:-:|:-|
 |SOLARIS, LINUX, AIX, HP-UX|<sh, ksh, bash 사용 시> </br>#cat /etc/profile(.profile) </br>TMOUT=600 </br>export TMOUT </br></br><csh 사용 시> </br>#cat /etc/csh.login 또는 cat /etc/csh.cshrc </br>set autologout=10|
 1. 세션 타임아웃을 600초(10분) 이하로 설정한다.
+
+# 2. 파일 및 디렉터리 관리
+## (1) root 홈, 패스 디렉터리 권한 및 패스 설정
+### 1) 개요
+1. root 계정의 PATH 환경변수에 "." (현재 디렉터리 지칭)이 포함되어 있으면 root 계정으로 접속한 관리자가 의도하지 않은 현재 디렉터리에 위치하고 있는 명령어가 실행될 수 있다. 즉 "." 이 /usr/bin, /bin, /sbin 등 명령어들이 위치하고 있는 디렉터리보다 우선하여 위치하고 있을 경우, root 계정으로 접속한 관리자가 특정 명령을 실행하면, 불법적으로 현재 디렉터리에 위치시킨 파일을 실행하여 예기치 않은 결과를 가져올 수 있다.
+2. PATH 환경변수에 "."이 맨 앞 또는 중간에 위치하고 있으면 root가 의도하지 않은 명령이 실행될 수 있으므로 PATH 환경변수의 마지막으로 이동시키거나 불필요한 경우 삭제한다.
+
+### TIP
+시스템에서 사용자가 명령 실행 시 때 명령어를 찾는 경로와 절차
+* $PATH에 설정된 경로에서 명령어를 찾는다.
+* 명령어가 있으면 실행권한을 확인한다.
+* 실행권한이 있다면 명령을 실행시킨 사용자 ID로 명령어를 실행한다.
+* 실행파일에 setuid/setgid가 설정되어 있다면 소유주/소유그룹 권한으로 명령어를 실행한다.
+
+### 2) 실습(Linux)
+1. root의 $PATH 경로의 맨 앞에 "." 추가
+  * root의 .bash_profile에서 $PATH 변수에 "." 추가
+  * .bash_profile을 다시 로드한 후 echo 명령을 통해 $PATH 경로를 확인, 경로의 맨 앞에 "." 추가된 것을 확인할 수 있다.
+2. root 홈 디렉터리에 공격자에 의해 조작된 ps 프로그램 위치
+  * $PATH 경로에 "." 추가 전에 which 명령(해당 명령어의 위치 확인)을 통해 ps 명령을 확인해 보면 /bin/ps에 위치한 것을 확인할 수 있다.
+```
+which ps
+```
+  * $PATH 경로 맨 앞에 "." 추가하면 /bin 디렉터리보다 현재 디렉터리가 우선하기 때문에 root의 홈 디렉터리에 있는 조작된 ps 명령이 검색된다.
+```
+int main(int argc, char **argv){
+  int i=1;
+  char cmd[100]={0, };
+  strcat(cmd, "/bin/ps");
+  for(i=1; i<argc;i++){
+    strcat(cmd, " ");'
+    strcat(cmd, argv[i]);
+  }
+  system(cmd);
+  printf("악성 프로그램이 실행되었습니다.\n\n");
+}
+```
+  * 조작된 ps 명령의 소스코드를 살펴보면 ps 명령을 정상적으로 수행하면서 "악성 프로그램이 실행되었습니다."라는 메시지를 출력하고 있다. 실제 악성코드라면 해당 부분에 악성 행위를 위한 코드가 위치한다.
+  * root가 ps 명령을 실행하면, /bin/ps가 실행되는 것이 아니고 조작된 홈 디렉터리의 ps 명령이 실행된다.
+
+### 3) 보안설정
+1. $PATH 변수를 확인하여 경로 맨 앞 또는 중간에 "." 가 포함되어 있는지 여부를 확인하여 맨 뒤로 이동시키거나 불필요한 경우 삭제한다.
+2. SHELL에 따라 참조되는 환경설정파일
+
+||SHELL 유형별 환경설정파일|
+|:-:|:-|
+|/bin/sh|/etc/profile, $HOME/.profile|
+|/bin/bash|/etc/profile, $HOME/.bash_profile|
+|/bin/ksh|/etc/profile, $HOME/.profile, $HOEM/kshrc|
+|/bin/csh|/etc/.login, $HOME/.cshrc, $HOME/.login|
+* 홈 디렉터리에 설정된 값이 가장 늦게 적용되어 최종 PATH로 설정됨
