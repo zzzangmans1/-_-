@@ -206,4 +206,24 @@ chgrp channel algisa_test_01
 ```
   * chown(소유자 변경), chgrp(소유그룹 변경) 명령을 통해 소유자/소유그룹을 변경한다.
 
+## (3) world writable 파일 점검
+### 1) 개요
+1. "world writable 파일"이란 모든 사용자(others)에게 쓰기 권한이 부여된 파일을 말한다.
+2. 모든 사용자가 접근 및 수정할 수 있는 권한으로 설정된 파일이 존재하면 일반 사용자의 실수 또는 악의적으로 주요 파일 정보를 변경할 수 있으므로 시스템 장애나 추가적인 공격에 활용될 수 있는 문제점이 있다.
 
+### 2) 보안설정
+#### (가) world writable 파일/디렉터리 검색
+```
+find /TEST -perm -2 -exec ls -al {} \;
+
+find /TEST -perm -0002 -exec ls -al {} \;
+```
+  * find 명령의 "-perm -2" 옵션을 통해 others에 쓰기(w) 권한이 부여된 파일/디렉터리를 검색
+
+#### (나) 모든 사용자(others)에 쓰기(w) 권한을 제거하거나 불필요한 파일/디렉터리일 경우 삭제한다.
+```
+chmod o-w /TEST/algisa_test
+
+rm -rf /TEST/algisa_test
+```
+  * 대상 파일/디렉터리에 chmod 명령을 이용하여 others(o)에 쓰기 권한을 제거(-w)하거나 rm 명령을 이용하여 삭제한다.
