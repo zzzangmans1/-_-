@@ -107,3 +107,95 @@
 
 1. 해독 가능한 암호방식으로 저장할 경우 공격자의 암호공격에 노출될 수 있다. 따라서 반드시 필요한 경우(다른 응용 프로그램에 의해 사용)를 제외하고는 "사용 안 함" 설정한다.
 
+## (6) 계정 잠금 정책
+### 1) 개요
+
+![image](https://github.com/zzzangmans1/boangisa_practice/assets/52357235/dabc2f1e-8c5b-42ba-b517-69b2c34d6a8e)
+
+1. 제어판 > 관리도구 > 로컬 정책 보안 > 계정 정책 > 계정 잠금 정책 선택
+
+### 2) 보안설정
+#### (가) 게정 잠금 기간
+
+![image](https://github.com/zzzangmans1/boangisa_practice/assets/52357235/742530ed-a2ee-4a1a-95b6-3434e160ed15)
+
+1. 계정 잠금 기간(시간)을 설정하면 패스워드가 틀린 횟수가 계정 잠금 임계값에 도달했을 때 지정한 기간(시간) 동안 계정을 잠근다. 따라서 공격자의 무차별 공격에 효과적으로 대응할 수 있다.
+2. 계정 잠금 기간 60분 이상 설정 권장
+
+#### (나) 계정 잠금 임계값
+
+![image](https://github.com/zzzangmans1/boangisa_practice/assets/52357235/72427fb5-0373-46fc-94bb-b5165a10ec66)
+
+1. 자동화된 방법을 통해 공격자는 패스워드에 대하여 무차별 공격을 시도할 수 있으므로 로그온 실패 횟수에 대한 제한이 필요하다. 계정 잠금 임계값 5 이하의 갑권장(Administrator 계정은 잠기지 않는다.)
+
+#### (다) 다음 시간 후 계정 잠금 수를 원래대로 설정
+
+![image](https://github.com/zzzangmans1/boangisa_practice/assets/52357235/dcb6b26d-068f-4b55-8048-a4f67f6db5a6)
+
+1. 실패한 로그온 시도 후 실패한 로그온 시도 카운트가 0으로 설정될 때까지 경과해야 하는 시간을 지정한다. 60분 이상 설정 권장
+
+# 2. 서비스 관리
+## (1) 하드디스크 기본 공유 제거
+### 1) 개요
+1. Windows는 프로그램 및 서비스를 네트워크나 컴퓨터 환경에서 관리하기 위해 시스템 기본 공유 항목을 자동으로 생성한다.
+   - 하드디스크 기본 공유 : C$, D$ 등
+   - 원격 관리 및 IPC용 기본 공유 : ADMIN$, IPC$
+2. 하드디스크 기본 공유인 C$, D$ 등을 제거하지 않으면 기본 공유 폴더를 통해 인가받지 않은 사용자가 하드디스크 내의 폴더나 파일에 접근하거나 바이러스가 침투하는 경로가 될 수 있다.
+
+### 2) 보안설정
+#### (가) 하드디스크 기본 공유 설정 확인
+
+![image](https://github.com/zzzangmans1/boangisa_practice/assets/52357235/95e452f0-c722-486d-bc4e-7acfa619c00b)
+
+1. 제어판 > 관리도구 > 컴퓨터 관리 > 공유 폴더 > 공유 선택하여 하드디스크 기본 공유 설정 확인
+
+![image](https://github.com/zzzangmans1/boangisa_practice/assets/52357235/ce004583-eff6-424f-aec1-05498bb09f47)
+
+2. 하드디스크 기본 공유 설정 시 공유 폴더를 통한 파일 접근 가능
+
+![image](https://github.com/zzzangmans1/boangisa_practice/assets/52357235/f8974c18-c73a-4957-83dc-2f694538cc7f)
+
+![image](https://github.com/zzzangmans1/boangisa_practice/assets/52357235/ee27e3c0-3773-476e-9f09-807e5045cf06)
+
+```
+net share C$ /delete
+
+net share D$ /delete
+```
+
+3. 관리화면에서 공유 중지를 하거나 cmd 창의 net share 명령을 통해 공유 중지가 가능하다. 단, 기본 공유의 경우 공유 중지를 해도 운영체제가 재시작되면 다시 생성되기 때문에 레지스트리 수정이 필요하다.
+   - HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters를 선택한 후 "AutoShareServer" DWORD값 생성 후 0으로 설정한다.
+
+![image](https://github.com/zzzangmans1/boangisa_practice/assets/52357235/cdb954d6-5f2f-4e27-8c74-2384920431c1)
+
+## (2) 공유 권한 및 사용자 그룹 설정
+### 1) 개요
+1. 공유 폴더에 Everyone 그룹이 포함되어 있으면 익명 사용자에 의한 접근이 가능하므로 Everyone 그룹을 제거하도록 한다.
+
+### 2) 보안설정
+#### (가) 공유 폴더의 사용 권한 확인
+1. 제어판 > 관리도구 > 컴퓨터 관리 > 공유 폴더 > 공유 선택하여 공유 폴더의 사용 권한 확인. Everyone 그룹이 있으면 이를 제거한다.
+
+## (3) 불필요한 서비스 제거
+### 1) 개요
+1. 취약한 서비스들이 디폴트로 설치되어 실행되고 있으면 이러한 서비스 또는 응용프로그램은 공격 지점이 될 수 있으므로 사용자 환경에서 필요하지 않은 서비스나 실행 파일을 사용하지 않거나 제거한다.
+2. 주로 취약한 서비스는 다음과 같다.
+   - Alerter : 서버에서 클라이언트로 경고 메시지를 보냄
+   - Clipbook : 서버 내 Clipbook을 다른 클라이언트와 공유
+   - Messenger : net send 명령어를 이용하여 클라이언트에 메시지 보냄
+   - Simple TCP/IP Services(Echo, Discard, Character, Generator, Daytime, Quote of the Day)
+
+### 2) 보안설정
+#### (가) 불필요한 서비스 확인
+
+![image](https://github.com/zzzangmans1/boangisa_practice/assets/52357235/365311e8-4f55-4639-9b8b-17aa48ca338f)
+
+1. 제어판 > 관리도구 > 서비스에서 불필요한 서비스를 확인한다. 관리자는 대상 시스템의 용도를 정확히 파악해 불필요한 서비스를 제거해야 한다.
+2. 불필요한 서비스가 시작 상태이면 이를 중지한 후 시작 유형을 "사용 안 함"으로 선택한다.
+3. 시작 유형별 동작 방식은 아래와 같다.
+|서비스 시작 유형|설명|
+|:-:|:-|
+|사용 안 함|설치되어 있으나 실행되지 않음|
+|수동|다른 서비스나 응용 프로그램에서 해당 기능을 필요로 할 때만 시작됨|
+|자동|부팅 시에 해당 장치 드라이버가 로드된 후에 운영 체제에 의해 시작됨|
+
