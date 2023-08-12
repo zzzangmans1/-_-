@@ -130,3 +130,63 @@
 2. 네트워크 서버/클라이언트 프로그램
 3. 응용 계층의 데이터 단위를 **데이터**라고 한다.
    * 일반적으로 5,6,7 계층 데이터 단위를 모두 데이터라 한다.
+
+# 3. OSI 모델 데이터 교환 방식
+### 1) Encapsulation(캡슐화)/Decapsulation(역캡슐화)
+1. 상위 계층의 데이터가 하위계층으로 보내지면, 하위 계층 프로토콜은 자신의 기능 수행을 위해 필요한 부가 정보(헤더)를 추가해서 새롭게 전송 메시지를 완성한다. 이를 캡슐화라고 한다.
+2. 수신 측에서는 상위 계층으로 데이터를 보낼 때 해당 계층의 헤더 정보를 확인한 후 제거하고 상위 계층으로 데이터를 보낸다. 이를 역캡슐화 라고 한다.
+
+### 2) Multiplexing(다중화)/Demultiplexing(역다중화)
+1. 다중화는 하나의 기능(매체)을 여러 영역에서 동시에 사용하는 기법을 말한다. 상위 계층의 여러 프로토콜이 하위 계층의 하나의 프로토콜을 이용하여 데이터를 전달하는 방식으로 수신 측에서 상위 프로토콜을 구별할 수 있도록 프로토콜 식별자 정보를 헤더에 추가한다.
+2. 역다중화는 공유하는 기능(매체)으로부터 개별 영역으로 분할하는 기법을 의미한다. 하위계층의 프로토콜이 여러 상위 계층 프로토콜 중 하나를 식별하여 데이터를 전달하는 방식으로 이를 위해서는 상위 프로토콜을 구별하기 위한 프로토콜 식별자 정보(다중화 시에 헤더에 설정된 정보)를 이용한다.
+
+# 4. TCP/IP 프로토콜
+### 1) Application Layer (응용 계층)
+#### (가) 개요
+1. 네트워크 서버/클라이언트 프로그램을 담당하는 계층
+2. 사용자와의 인터페이스를 담당하는 계층
+
+#### (나) 주요 프로토콜
+1. HTTP(80/tcp) : Hyper-Text Transfer Protocol
+2. FTP(20/21/tcp) : File Transfer Protocol, 데이터 포트(20), 제어 포트(21)
+3. SSH(22/tcp) : Secure Shell, 암호화된 원격 터미널 접속 프로토콜
+4. SFTP(22/tcp) : SSH File Transfer Protocol, SSH를 이용한 암호화된 파일 송수신 프로토콜
+5. TELNET(23/tcp) : TELe NETwork, 암호화하지 않은 원격 터미널 접속 프로토콜
+6. SMTP(25/tcp) : Simple Mail Transfer Protocol, 메일 전송용 프로토콜
+7. POP3(110/tcp) : Post Office Protocol Version3, 메일 수신용 프로토콜
+8. IMAP(143/tcp) : Internet Message Access Protocol, 메일 수신용 프로토콜
+9. DNS(53/tcp,udp) : Domain Name System, 도메인명에 대한 호스트 정보를 제공해주는 프로토콜
+10. DHCP(67,68/udp) : Dynamic Host Configuration Protocol, 서버(67), 클라이언트(68), 동적으로 호스트 네트워크 설정을 제공해주는 프로토콜
+11. TFTP(69/udp) : Trivial FTP, 단순 파일 송수신 프로토콜
+12. SNMP(161/udp) : Simple Network Management Protocol, 네트워크 관리 프로토콜
+
+### 2) Transport Layer(전송 계층)
+#### (가) 개요
+1. Process-To-Process Communication, 프로세스 간 신뢰성 있는 데이터전송을 담당하는 계층으로 신뢰성 있는 전송이란 전송 중에 발생하는 오류, 누락 및 흐름제어, 혼잡제어 등을 적절히 수행하여 데이터의 안전한 전송을 보장함을 말한다.
+2. 프로세스를 식별하기 위한 논리적인 주소로 Port(16bit) 주소를 사용한다.
+
+#### (나) 주요 프로토콜
+1. TCP(Transmission Control Porotocl) : 신뢰성 있는 연결지향 프로토콜(스트림 기반 전송)
+2. UDP(User Datagram Protocol) : 비신뢰적인 비연결형 프로토콜(데이터그램 기반 전송)
+3. SCTP(Stream Control Protocol) : TCP와 UDP의 조합형
+
+### 3) Internet Layer(인터넷 계층)
+#### (가) 개요
+1. Host-To-Host Communication, 호스트 간의 라우팅을 담당하는 계층
+2. 호스트를 식별하기 위한 논리적은 주소로 IP(IPv4:32bit, IPv6:128bit) 주소를 사용한다.
+
+#### (나) 주요 프로토콜
+1. IP(Internet Protocol) : 비신뢰적인 비연결형 데이터그램 프로토콜
+2. ICMP(Internet Control Message Protocol) : 에러 및 상태진단 메시지 프로토콜
+3. IGMP(Internet Group Management Protocol) : 멀티캐스트용 프로토콜
+4. ARP(Address Resolution Protocl) : 주소변환(논리주소(IP) -> 물리주소(MAC)) 프로토콜
+5. RARP(Reverse Address Resolution Protocol) : 역주소변환(물리주소(MAC) -> 논리주소(IP)) 프로토콜
+
+### 4) Network Interface Layer(네트워크 인터페이스 계층)
+#### (가) 개요
+1. Node-To-Node Delivery, 인접한 노드 간에 신뢰성 있는 데이터전송을 담당하는 계층
+2. Node를 식별하기 위한 물리적인 주소로 MAC(48bit) 주소를 사용한다. 물리적 MAC 주소는 상위 24비트와 하위 24비트로 이루어져 있으며 상위 24비트는 제조사(벤더) 식별코드이고 하위 24비트는 제조사가 할당한 일련변호를 의미한다.
+
+#### (나) 주요 프로토콜
+1. LAN(Local Area Network) 프로토콜 : Ethernet, TokenRing, FDDI 등
+2. WAN(Wide Area Network) 프로토콜 : X.25, Frame Relay, PPP, SLIP 등
