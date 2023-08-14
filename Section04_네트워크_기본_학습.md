@@ -420,3 +420,67 @@
    * 주소변환 방식은 IPv4 주소를 IPv6 주소로 변환하거나 IPv6 주소를 IPv4 주소로 변환하여 통신하는 방식을 말한다.
    * 패킷의 앞부분에 변환 헤더를 추가함으로써 주소를 변환하여 송신하고 수신측에서 변환 헤더를 제거하는 방식으로 통신한다.
    * 소수의 IPv6 사이트가 대규모의 IPv4 인터넷에 연결되는 전환의 초기 단계와 소수의 IPv4 사이트가 대규모의 IPv6 인터넷에 연결되는 전환의 마지막 단계에서 사용할 수 있다.
+
+# 7. ICMP 프로토콜
+### 1) 개요
+1. 3계층의 IP 프로토콜은 신뢰할 수 없는 프로토콜이다. 즉 전송상태에 대한 관리가 이루어지지 않는다. 이러한 IP 프로토콜의 단점을 보완하기 위한 프로토콜 ICMP 프로토콜이다.
+2. IP 패킷 전송 중 에러 발생 시 에러 발생 원인을 알려주거나 네트워크 상태를 진단해주는 기능을 제공해준다. 정리해보면 아래와 같다.
+   * Error-Reporting Message 기능 : 전송 중 오류 발생 시 에러 메시지를 생성하여 응답
+   * Query Message 기능 : 네트워크 상태를 진단하기 위한 쿼리 요청 및 응답메시지 생성
+3. ICMP 메시지는 메시지의 유형을 의미하는 Type 필드와 유형별 세부 내용을 담고 있는 Code 필드로 구성이 된다.
+
+### 2) ICMP 프로토콜 구조
+1. Type(8 bits) : ICMP 메시지의 유형/용도
+   * 예) Type 3 : Destination Unreachable(목적지 도달 불가)
+2. Code(8 bits) : Type의 세부 내용으로 Type과 Code가 조합되어 ICMP 메시지의 목적과 용도를 나타낸다.(Code가 없는 Type도 존재)
+   * 예) Type 3의 Code 3 : Port Unreachable(UDP 포트가 열려있지 않음)
+3. Checksum(16 bits) : ICMP 메시지 오류를 검사하기 위한 값
+4. Rest of the header : Type과 Code에 따라 추가되는 헤더
+5. Data section : 데이터가 위치하는 영역
+
+### 3) 주요 ICMP Error-Reporting 메시지
+#### (가) Destination Unreachable(Type 3)
+1. 해당 목적지에 도달할 수 없음을 의미한다.
+2. 목적지 도달 불가 사유에 따라 다양한 Code(상세 유형)로 구성이 되어 있다. 주요 Code를 살펴보면 다음과 같다.
+   * Code 1(Hosts Unreachable) : 최종 단계의 라우터가 목적지 호스트로 패킷 전송에 실패한 경우
+   * Code 2(Protocol Unreachable) : 목적지 호스트에서 특정 프로토콜을 사용할 수 없는 경우
+   * Code 3(Port Unreachable) : 목적지 호스트에 해당 UDP 포트가 열려있지 않은 경우, TCP의 경우에는 포트가 열려있지 않으면 TCP RST 패킷을 반환한다.
+   * Code 4(Fragmentation needed and don\`t fragment was set) : IP 패킷의 단편화가 필요하지만, IP 헤더의 Don\`t fragment was set) : IP 패킷의 단편화가 필요하지만, IP 헤더의 Don\`t fragment(DF) 플래그가 설정되어 단편화할 수 없는 경우 라우터에 의해 반환된다.
+
+#### (나) Redirection(Type 5)
+1. 라우팅 경로가 잘못되어 새로운 경로를 이전 경유지 또는 호스트에게 알려주는 메시지이다.
+2. ICMP Redirect 공격 시 이용하는 메시지이다.
+
+#### (다) Time Exceeded(Type 11)
+1. 타임아웃이 발생하여 IP 패킷이 폐기되었음을 알리는 메시지이다. 타임아웃 사유는 Code를 통해 알 수 있다.
+   * Code 0(Time To Live exceeded in Transit) : IP 패킷이 최종 목적지에 도달하기 전에 TTL 값이 0이 되어 해당 패킷이 폐기되었음을 알리는 메시지이다.
+   * Code 1(Fragment reassembly time exceeded) : IP 패킷이 재조합 과정에서 타임아웃이 발생하여 해당 IP 데이터그램이 모두 폐기되었음을 알리는 메시지이다. 일반적으로 IP 데이터그램의 일부 단편이 전송과정에서 손실될 경우 재조합에 실패하여 발생한다.
+  
+### 4) 주요 ICMP Query 메시지
+#### (가) Echo Request(Type 8) and Reply(Type 0)
+1. ping 유틸리티 프로그램에 사용되는 메시지로 종단노드 간에 네트워크 및 호스트 상태진단을 목적으로 사용한다.
+2. 별도의 Code는 없으며 이외의 쿼리 타입들은 거의 사용되지 않는다.
+3. Echo Request 메시지 캡처 예
+   * ICMP 기본 헤더 이외에 전송한 Echo Requestg 메시지를 식별하기 위한 Identifier(ID) 필드와 메시지 순번을 식별하기 위한 Sequence number 필드가 추가된 것을 볼 수 있다.
+   * TTL 값이 128(윈도우 기본 TTL) 이하인 것으로 보아 윈도우 시스템에서 보낸 메시지임을 추측할 수 있다.
+4. Echo Reply 메시지 캡처 예
+   * Echo Request 메시지 전송 시 설정한 id와 sequence number가 동일하게 설정되어 있는 것을 볼 수 있다.
+   * TTL 값이 64(리눅스 TTL) 이하인 것으로 보아 리눅스 시스템에서 보낸 메시지임을 추측할 수 있다.
+
+### 5) ICMP 리다이렉트 공격
+#### (가) 개요
+1. ICMP Redirect 공격이란 ICMP Redirection 메시지(Type 5)를 이용하여 패킷 경로를 악의적으로 재설정하는 공격을 말한다. ICMP Redirection 메시지를 수신한 호스트는 자신의 라우팅 테이블에 특정 목적지로 나가는 gateway 주소를 변경하는데 공격자는 이를 이용하여 자신이 원하는 형태의 ICMP Redirection 메시지를 만들어 특정 목적지로 가는 패킷을 공격자로 향하도록 한다.
+2. ARP Redirect와 ICMP Redirect 공격의 차이점을 살펴보면 ARP Redirect는 희생자의 ARP Cache Table정보를 변조하여 스니핑하는 것이고, ICMP Redirect는 희생자의 라우팅 테이블을 변조하여 스니핑 한다는 차이점이 있다.
+
+#### (나) 공격결과
+1. ICMP Redirect 공격 시 희생자 PC 패킷 캡처
+   * 공격자에 의해 조작된 ICMP Redirection 메시지(Type : 5, Code : 1)가 희생자에게 전달되고 있다. ICMP Redirection 메시지는 게이트웨이/라우터만이 보낼 수 있으므로 공격자는 출발지 IP를 희생자의 게이트웨이 주소로 위조하고 있다.
+   * ICMP Redirection 메시지를 분석해보면, 목적지 주소에 대한 gateway 주소를 공격자의 주소로 조작한 것을 알 수 있다.
+2. 공격 후 희생자PC의 라우팅 테이블 정보
+   * 희생자PC의 라우팅 테이블 정보를 살펴보면 8.8.8.8 목적지의 경로가 정상적인 gateway 주소가 아닌 공격자의 주소로 변경된 것을 확인할 수 있다.
+   * 따라서 희생자PC에서 8.8.8.8 목적지로 패킷 전송 시 공격자 PC로 패킷이 전달되어 공격자는 스니핑이 가능하게 된다
+
+#### (다) 대응방법
+1. ICMP Redirection 메시지에 의해 라우팅 테이블이 변경되지 않도록 ICMP Redirect 옵션을 해제한다.
+2. 현재 대부분의 OS에서 보안상의 이유로 ICMP Redirect 옵션을 기본적으로 해제하고 있다.
+   * 리눅스 커널 파라미터 중 ICMP Redirect 설정인 accept_redirects를 0(허용안함)로 설정한다.
