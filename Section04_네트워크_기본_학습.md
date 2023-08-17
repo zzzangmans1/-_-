@@ -692,5 +692,64 @@
 ### 5) 윈도우 리눅스 차이점
 * 리눅스는 최종 목적지에 도달하여 33434/udp 포트가 닫혀 있으므로 ICMP Destination unreachable(Type 3) 이 반환되어 목적지에 도달한 것을 알 수 있고 윈도우는 최종 목적지에 도달하면 ICMP Echo Reply(Type 0) 응답이 와서 목적지에 도달한 것을 알 수 있다.
 
+## (3) netstat 명령
+### 1) 개요
+1. 시스템의 네트워크 관련 다양한 상태정보를 관리할 수 있는 명령어
+2. 주요 제공정보는 다음과 같다.
+   * 옵션 없음 : 모든 연결된(ESTABLISHED) 소켓 상태정보
+   * -a 옵션 : 모든 소켓 상태정보
+   * -i 옵션 : 네트워크 인터페이스 정보
+   * -r 옵션 : 시스템 라우팅 테이블 정보
+   * -s 옵션 : 프로토콜별(TCP, UDP, ICMP, IP 등) 통계정보
+  
+### 2) 실습(Linux)
+1. 소켓 상태정보 확인하기
+   * netstat -t : "t" 옵션은 TCP 소켓을 출력하라는 옵션이다. 따라서 TCP 소켓 중 연결된(ESTABLISHED) 소켓만을 출력한다. ("u" 옵션은 UDP를 의미)
+   * 각 필드의 의미를 살펴보면 다음과 같다.
 
+|필드|설명|
+|-|-|
+|Proto|사용한 프로토콜의 종류|
+|Recv-Q|원격 호스트로부터 수신 버퍼에 저장한 데이터의 크기|
+|Send-Q|원격 호스트로 전송하기 위해 송신 버퍼에 저장한 데이터의 크기|
+|Local Address|로컬 호스트의 소켓 주소(IP : 포트)|
+|Foreign Address|원격 호스트의 소켓 주소(IP : 포트)|
+|State|소켓 상태|
 
+   * netstat -at : TCP 소켓을 모두 출력한다. 모두 출력한다는 것은 연결된 상태(ESTABLISHED)뿐만이 아니라 연결 대기(LISTEN), 연결설정 및 종료 중인 소켓도 모두 출력한다는 의미이다.
+   * netstat -ant : "n" 옵션은 네트워크 주소를 숫자 형식으로 출력하는 옵션이다. 따라서 숫자 형식의 네트워크 주소로 연결된 소켓과 연결 요청 대기 중인 TCP 소켓을 모두 출력한다.
+   * netstat -antp : "p" 옵션은 해당 소켓의 프로세스명/pid 정보를 출력하는 옵션이다. TCP 소켓을 열고 있는 프로세스를 확인하는 데 유용하게 사용한다.
+2. 네트워크 인터페이스 정보 확인하기
+   * ```netstat -i```
+   * RX-OK/RX-ERR/RX-DRP/RX-OVR : RX는 수신한(Received) 패킷 수를 의미한다. OK는 오류 없이 수신한 패킷 수, ERR는 오류가 발생한 수신 패킷 수, DRP는 폐기(Drop)된 수신 패킷 수, OVR은 과도한 양의 수신 패킷에 의한 오버플로우 발생으로 폐기된 패킷 수를 의미한다.
+   * TX-OK/TX-ERR/TX-DRP/TX-OVR : TX는 전송한(transmitted) 패킷 수를 의미한다. OK는 오류 없이 전송한 패킷 수, ERR는 오류가 발생한 전송 패킷 수, DRP는 폐기(DROP)된 전송 패킷 수, OVR은 과도한 양의 전송 패킷에 의한 오버플로우 발생으로 폐기 수를 의미한다.
+3. 시스템 라우팅 테이블 정보 확인하기
+   * ```netstat -rn```
+4. 프로토콜별 통계정보
+   * ```netstat -s```
+   * 시스템이 부팅된 이후부터 현재까지 누적된 프로토콜 통계정보를 출력한다.
+
+## (4) ifconfig 명령(리눅스/유닉스)
+### 1) 개요
+1. 유닉스/리눅스 시스템에서 네트워크 인터페이스 설정 정보를 조회하거나 IP 주소나 서브넷 마스크 등의 설정을 변경할 때 사용한다.
+
+### 2) 실습 I (Linux)
+1. eth1 Link encap:Ethernet HWaddr 00\:0C\:29\:0C\:A6\:C6
+   * eth1 이더넷 인터페이스가 연결되어 있고 MAC 주소 정보(HWaddr)를 보여주고 있다.
+2. inet addr:192.168.197.133 Bcast:192.168.197.255 Mask:255.255.255.0
+   * IP 주소(inet addr), 브로드캐스트 주소(Bcast), 넷마스크(Mast) 값을 보여주고 있다.
+3. UP BROADCAST RUNNING MULTICAST MTU:1500 Metric\:1
+   * UP은 현재 인터페이스가 활성화 상태임을 의미하며, BROADCAST는 인터페이스가 브로드캐스트를 지원하고 있음을 의미한다.
+   * RUNNING은 인터페이스가 실행 중임을 나타내고 MULTICAST는 멀티캐스트를 지원하고 있음을 나타낸다.
+   * MTU는 1500 bytes(이더넷)이고 메트릭 값은 1이다. 메트릭은 라우팅 경로의 효율성(우선순위)을 나타내는 값으로 이 값이 클수록 비용이 크다.(우선순위가 낮아진다)
+  
+### 3) 실습 II (Linux)
+1. 인터페이스(eth1)에 Promiscuous 모드 설정
+   * ```ifconfg eth1 promisc```
+   * 인터페이스가 promiscuous 모드로 동작하게 되면 "PROMISC"로 표시
+   * /var/log/messages 로그 파일에 eth1 인터페이스가 promiscuous mode로 전환되었음을 보여주고 있다.
+   * 외부 침입자에 의한 불법적인 스니핑 목적의 모드 전환이 발생할 수 있으므로 주의가 필요하다.
+2. 인터페이스(eth1)에 promiscuous 모드 해제
+   * ```ifconfig eth1 -promisc```
+   * ifconfig "인터페이스 명" -promisc 명령을 통해 해당 인터페이스에 설정된 promiscuous mode 설정을 해제할 수 있다.
+   * /var/log/messages 로그 파일에 eth1 인터페이스가 promiscuous mode에서 해제되었음을 보여주고 있다.
