@@ -753,3 +753,50 @@
    * ```ifconfig eth1 -promisc```
    * ifconfig "인터페이스 명" -promisc 명령을 통해 해당 인터페이스에 설정된 promiscuous mode 설정을 해제할 수 있다.
    * /var/log/messages 로그 파일에 eth1 인터페이스가 promiscuous mode에서 해제되었음을 보여주고 있다.
+
+# 11. 포트스캐닝
+## (1) 개요
+1. 포트 스캐닝은 공격자가 침입 전 대상 호스트에 어떤 포트(서비스)가 활성화되어 있는지 확인하는 기법으로 침입 전 취약점을 분석하기 위한 사전 작업 중 하나이다.
+2. 포트 스캐닝을 통해 대상 호스트의 동작 여부와 제공하는 서비스 등을 확인할 수 있다. 일반적으로 포트 스캐닝을 수행하기 위한 포트 스캐너로 nmap을 많이 사용한다.
+
+## (2) nmap 포트 스캐너 사용법
+|문법|nmap [scan type] [options] <target>
+|:-:|:-|
+|Scan Type|-sS TCP SYN(Half-Open) Scan : TCP 포트 오픈 여부를 확인하는 스캔 </br>-sT TCP Connect(Open) Scan : TCP 포트 오픈 여부를 확인하는 스캔 </br>-sU UDP Scan : UDP 포트 오픈 여부를 확인하는 스캔 </br>-sF TCP FIN Scan : TCP FIN 제어비트 패킷을 이용한 스캔 </br>-sX TCP Xmas Scan : TCP FIN, PSH, URG 제어비트를 조합한 패킷을 이용한 스캔 </br>-sN TCP NULL Scan : TCP 제어비트 설정이 없는 NULL 패킷을 이용한 스캔 </br>-sA TCP ACK Scan : 방화벽 룰셋(필터링 정책)을 확인하기 위한 스캔 </br>-sP Ping(icmp/icmp echo) Scan : Ping을 이용한 호스트 활성화 여부를 확인하는 스캔 </br>-D Decoy Scan : 실제 스캐너 주소 외에도 다양한 주소로 위조하여 스캔하는 방식 </br>-b TCP FTP Bounce Scan, -b \<FTP bounce Proxy\>|
+|Port Options|-p 22 : 22번 포트 스캔 </br>-p <service> : 특정 서비스명(e.g. ssh)으로 포트 스캔 </br>-p 20,25,80 : 20,25,80 포트 스캔, 여러 포트 스캔 </br>-p 1-1023 : 1-1023번 포트 스캔, 일정 범위로 포트 스캔 </br>-pT:21,23,110,U:53 : TCP 21,23,110번 포트와 UDP 53번 포트를 분리하여 포트 스캔|
+|Output Options|-v : 상세 내역 출력 </br>-d : Debugging </br>-oN <file> : 결과를 일반 파일 형식으로 출력 </br>-oX <file> : 결과를 XML 파일 형식으로 출력 </br>-oG <file> : 결과를 Grepable(grep, awk등으로 분석하기 편한) 파일 형식으로 출력 </br>-oA <Directory> : 일반(.nmap), XML(.xml), Grepable(.gnmap) 파일로 출력|
+|기타 Options|-O : 영문 대문자 O, 대상 호스트의 운영체제 정보를 출력 </br>-F : 빠른 네트워크 스캐닝 </br>-T0 ~ T5 : T0 아주느리게 ~ T5 아주 빠르게|
+|Target|-hostname 지정 * ex) www.algisa.com </br> IP address, Network 등 가능 </br> * ex) 192.168.159.151 : 특정 IP 지정 </br> * ex) 192.168.159.0/24 : 192.168.159 대역 지정 </br> * ex) 192.168.159.100-150 : 특정 범위(100-150) 지정|
+
+## (3) TCP Connect(Open) 스캔
+### 1) 개요
+1. 일반 사용자 권한으로 TCP 포트 오픈 여부를 확인하기 위해 connect 시스템 호출(system call)을 이용하는 방식으로 스캔 대상 포트별로 정상적인 TCP 연결설정을 수행하여 스캔하는 방식이다.
+2. TCP 등 프로토콜 패킷 자체(raw packet)를 사용자가 직접 조작하여 생성하기 위해서는 관리자 권한이 필요하다. TCP SYN 스캔 등 대부분의 스캔 방식들이 관리자 권한으로 패킷을 직접 조작해서 스캔하는 방식이며 이러한 관리자 권한이 없을 경우에는 일반 사용자 권한으로 사용할 수 있는 시스템 호출을 이용하는 TCP Connect 스캔을 이용한다.
+3. 포트 스캔 과정에서 connect 시스템 호출을 통해 TCP 연결설정 과정을 완전하게 수행하여 Target 호스트의 포트에 직접 연결되기 때문에 Open 스캔이라고도 하며 시스템 로그에 스캔한 흔적이 남는 특성이 있다.
+
+### 2) 동작방식
+#### (가) OPEN/CLOSED 상태
+1. 먼저 Target 호스트의 대상 포트로 SYN 패킷을 전송한다. 전송 후 포트 오픈 여부에 따라 다음과 같은 응답 패킷을 수신한다.
+   * 포트가 열린 상태 : **SYN+ACK 응답을 수신한 후 ACK 패킷을 전송하여 TCP 연결을 완료**한다.(connect 시스템 호출 동작 방식)
+   * 포트가 닫힌 상태 : **RST+ACK 응답을 수신**한다.
+2. 대상 포트가 열린 상태에서 연결설정이 완료되고(3-way handshaking 과정) 나면 **포트 오픈 여부를 확인했기 때문에 연결을 즉시 중단하기 위해 RST+ACK 패킷을 전송한다.
+3. TCP 연결 설정이 이루어지기 떄문에(이를 TCP 세션이 성립된 상태라고도 표현함) 대상 호스트의 시스템 로그에 스캔을 시도한 IP 주소가 남는 특징이 있다.
+4. 실습
+   * Scanner 호스트 : 192.168.57.80 / Target 호스트 : 192.168.56.100
+   * Target 호스트(192.168.56.100)의 23, 80 TCP 포트(-p)에 대한 Connect 스캔(-sT) 수행
+   * 스캔 결과를 살펴보면 Target 호스트의 telnet(23/tcp) 포트는 열려있고 http(80/tcp) 포트는 닫혀 있는 것을 확인할 수 있다.
+   * (wireshark) 23/tcp 포트 스캔 시 Target 호스트로부터 SYN+ACK 응답이 왔으며 ACK 전달 후(연결 설정 완료) RST+ACK로 연결을 즉시 중단하고 있다.
+   * (wireshark) 80/tcp 포트 스캔 시 Target 호스트로부터 RST+ACK 응답이 온 것을 볼 수 있다.
+  
+#### (나) Filtered 상태
+1. Target 호스트의 포트(서비스)가 방화벽에 의해 필터링(차단)되고 있다면 방화벽 차단 정책에 따라 응답이 없거나 ICMP 에러 메시지(Destination Unreachable)응답을 받을 수 있다. 방화벽 필터링(차단) 정책은 보안상의 이유로 응답을 하지 않도록 설정하는 것이 일반적이다.
+   * iptables 방화벽의 경우 DROP 차단 정책을 사용하면 해당 패킷을 폐기한 후 아무런 응답을 하지 않고 REJECT 차단 정책을 사용하면 해당 패킷을 폐기한 후 설정된 ICMP 에러 메시지(Destination Unreachable)를 응답한다.
+2. 실습
+   * 스캔 결과를 살펴보면 Target 호스트의 ftp(21/tcp) 포트가 방화벽에 의해 차단(filtered)된 것을 알 수 있다.
+   * (wireshark) 21/tcp 스캔 시 방화벽 룰세(필터링 정책)에 의해 차단되어 방화벽 차단 정책(REJECT(icmp-host-prohibited))에 설정된 ICMP 에러 메시지(Type: Destination Unreachable, Code:Host administratively prohibited) 응답이 온 것을 볼 수 있다.
+  
+## (4) TCP SYN(Half-Open) 스캔
+### 1) 개요
+
+
+5. 
