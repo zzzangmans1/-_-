@@ -1133,3 +1133,58 @@
 11. Slow HTTP Read DoS : 공격자는 웹서버와 TCP 연결 시, TCP 윈도우 크기 및 데이터 처리율을 감소시킨 후 HTTP 데이터를 송신하여 웹서버가 정상적으로 응답하지 못하도록 DoS 상태를 유발한다.
 12. 해시도스(HashDoS) 공격 : 웹서버는 클라이언트로부터 전달받은 HTTP 메시지의 매개정보를 관리하기 위해 해시테이블을 사용한다. 조작된 매개정보를 포함한 다량의 메시지는 해시테이블 검색을 위한 인덱스로 사용되는 해시값에 충돌을 발생시켜 정확한 값을 찾기 위해 모든 해시테이블을 검사하게 되는데 이때 웹서버의 CPU 자원을 소진하게 되어 정상적인 서비스를 방해한다.
 13. 헐크도스(HulkDoS) 공격 : GET Flooding 공격유형으로 동일 URL을 지속적으로 요청 시 차단될 수 있기 때문에 이를 우회하기 위해 URL을 지속적으로 변경하면서 공격하는 방식
+
+### 5) 네트워크 대역폭 소진 공격 실습
+#### (가) UDP Flooding 공격
+1. 개요
+   * 공격자는 다량의 UDP 패킷을 서버로 전송하여 서버가 보유한 네트워크 대역폭을 소진시켜 다른 정상적인 클라이언트의 접속을 원활하지 못하도록 유발시키는 공격
+2. 실습환경
+   * Attacker : random IP(IP Spoofing), Target : 192.168.159.133
+   * 53/udp(DNS 서비스) 포트로 다량의 UDP 패킷 발생
+3. 패킵 캡처(도구: Wireshark)
+   * Time 항목(초 단위)을 살펴보면 매우 짧은 시간 동안에 다량의 UDP 패킷이 Target 서버(192.168;.159.133)로 발생했음을 확인할 수 있다.
+   * 출발지 IP를 보면 다양한 주소로 위조되어 있음을 확인할 수 있다. 다수의 좀비 PC에 의해 UDP 공격이 발생하게 되면 Target 네트워크에 대량의 트래픽이 발생하여 서비스가 불가한 상태가 된다.
+4. 패킷 캡처(도구: tcpdump)
+   * ```tcpdump -nn "udp"```
+   * tcpdump의 BPF 옵션을 udp로 지정하여 해당 트래픽만 캡처함
+
+#### (나) ICMP Flooding 공격
+1. 개요
+   * 공격자는 다량의 ICMP 패킷을 서버로 전송하여 서버가 보유한 네트워크 대역폭을 소진시켜 다른 정상적인 클라이언트의 접속을 원활하지 못하도록 유발시키는 공격
+2. 실습환경
+   * Attacker : random IP(IP Spoofing), Target : 192.168.159.133
+   * 다량의 ICMP 패킷(ICMP Echo Request/Ping) 발생
+3. 패킷 캡처(도구: Wireshark)
+   * Time 항목을 살펴보면 매우 짧은 시간 동안에 출발지 IP가 위조된 다량의 ICMP 패킷(ICMP Echo Request)이 Target 서버(192.168.159.133)로 발생했음을 확인할 수 있다.
+4. 패킵 캡처(도구: tcpdump)
+   * ```tcpdump -nn "icmp"```
+   * tcpdump의 BPF 옵션을 icmp로 지정하여 해당 트래픽만 캡처함
+
+### 6) 서버/서비스 자원 소진 공격 실습
+#### (가) TCP SYN Flooding 공격
+1. 개요
+   * TCP SYN Flooding 공격은 TCP 연결설정 과정(3-Way Handshake)의 취약점을 이용한 공격으로 공격 대상 시스템의 TCP 연결자원을 소진시켜 외부로부터 TCP 연결 요청을 받을 수 없는 상태로 만드는 서비스 거부 공격 기법이다.
+2. 공격원리
+   * Client가 Server로 SYN 요청을 보내면 Server는 SYN+ACK 응답을 보내고 해당 연결 요청정보를 incomplete connection queue에 저장한다.
+   * Client로부터 ACK를 받아 연결이 완료되면 incomplete connection queue에 있던 연결 요청정보를 completed connection queue로 이동, accept() 시스템콜을 통해 클라이언트와 통신할 연결소켓이 생성되면서 연결 요청정보는 삭제된다.
+   * TCP SYN Flooding 공격은 다수의 TCP 연결을 완료하지 않아 incomplete connection queue를 꽉 차게 만들어 더 이상 새로운 연결 요청을 받을 수 없도록 하는 공격이다. backlog queue의 크기는 incomplete와 complete queue 크기의 합이다.
+   * 공격자는 incomplete connection queue를 소진시키기 위해 출발지 IP를 도달 불가능한(존재하지 않는) IP로 위조한 SYN 요청을 보내 서버 측의 SYN+ACK 요청에 대한 ACK 응답이 발생하지 않도록 만든다.
+3. 실습환경
+   * Attacker : random IP(IP Spoofing), Target : 192.168.197.133
+   * 80/tcp(HTTP 서비스) 포트로 다량의 TCP 연결 요청(SYN) 패킷 발생
+4. 공격대상 측 소켓 상태
+   * Client가 Server로 SYN packet을 보내면 Server는 SYN+ACK를 보내고 해당 연결설정이 완료될 때까지 Backlog queue(연결요청대기큐)에 담아둔다.
+   * 정상적인 연결이라면 클라이언트로부터 SYN+ACK에 대한 ACK 응답을 받아 연결설정이 완료되지만, Syn Flooding 공격의 경우에는 ACK 응답이 오지 않아 Backlog queue에 연결정보가 계속 쌓이게 된다. ```netstat -ant``` 명령어를 통해 소켓상태를 살펴보면 다수의 SYN_RECV 상태의 tcp 소켓을 확인할 수 있는데 SYN_RECV 상태가 바로 ACK 응답을 대기하고 있는 상태이다.
+   * Backlog queue가 꽉 차게 되면 더 이상 연결 요청을 받을 수 없어 정상적인 서비스 제공이 불가능한 상태가 된다.
+5. 패킷 캡처(도구: Wireshark)
+   * Time 항목을 살펴보면 매우 짧은 시간 동안에 다량의 TCP 연결 요청이 Target 서버로 발생했음을 확인할 수 있다.
+   * 위조된 출발지 IP 중에는 실제 존재하는 IP도 있으며, 이 경우 상대방으로부터 RST 응답이 발생하는 것을 확인할 수 있다.
+6. 패킷 캡처(도구: tcpdump)
+   *```tcpdump -nn "tcp port 80"```
+7. 대응책
+   * 완전한 3-Way Handshaking이 이루어지지 않는다면 Backlog queue(연결요청대기큐)가 소비되지 않도록 설정한다. 대표적으로 Syn Cookie 설정을 이용할 수 있다. ex) ```[Linux]#sysctl -w net.ipv4.tcp_syncookies=1``` : Syn Cookie 기능을 활성화한다. (1은 true를 의미)
+   * 방화벽 또는 DDoS 대응장비를 이용하여 동일 Client(IP)의 연결 요청에 대한 임계치 설정을 통해 과도한 연결 요청이 발생하는 것을 차단한다. iptables를 이용한 설정 예를 살펴보면 다음과 같다. ex) ```iptables -A INPUT -p tcp --dport 80 --syn -m connlimit --connlimit-above 5 -j DROP``` : TCP 80포트 연결 요청에 대하여 동일 출발지 IP로 동시 연결개수가 5개 초과 시 이를 차단한다.
+   * First SYN DROP 설정을 한다. 연결 요청 패킷을 보내는 클라이언트가 실제로 존재하는지를 파악하는 방법으로 클라이언트로부터 전송된 첫 번째 SYN은 DROP하여 재요청 패킷이 도착하는지 확인하여 출발지 IP가 위조되었는지 판단한다. 대부분의 공격 툴이 다량의 SYN 요청을 생성할 뿐 패킷 DROP시 재전송을 수행하지 않는다는 점을 이용한 방법이다.
+   * Backlog queue의 크기를 늘려준다. 이 방법은 임시적인 조치는 되지만 대규모 공격이 발생했을 때는 순식간에 queue가 full 상태가 되기 때문에 효과를 보기 어렵다. ex1) ```[Linux]#sysctl -w net.ipv4.tcp_max_syn_backlog = 1024``` : TCP Backlog queue의 크기를 1024로 늘린다. ex2) ```[Unix(솔라리스)]#ndd -set /dev/tcp tcp_conn_req_max_q0 1024``` : TCP Backlog queue의 크기를 1024로 늘린다.
+   * SYN+ACK에 대한 대기 시간을 줄인다.(대기시간을 너무 줄이면 정상 요청에 문제가 생길 수 있음)
+8. 정리하면 TCP SYN을 보내면 소켓은 SYN_RECV 상태가 되고 incomplete connection queue에 연결 요청 정보가 저장되고 3-Way Handshake를 완료하면 소켓은 ESTABLISHED 상태가 되고 complete connection queue에 연결 요청 정보가 저장되고 accept() 시스템 콜을 통해 연결 소켓이 생성되면 요청 정보는 삭제가 된다. 이를 악용하여 랜덤 IP의 클라이언트가 SYN을 서버에 보내어 서버에서 SYN+ACK응답을 받고 ACK를 보내지 않아 서버의 소켓에서는 SYN_RECV 상태의 소켓이 많아지고 incomplete connection queue가 꽉 차게 되어 더 이상 새로운 연결 요청을 받을 수 없게 된다. 이 때 존재하는 IP의 경우 RST를 보내게 된다. 대응책으로는 Backlog queue를 사용하지 않게 Syn  Cookie 사용 ```[Linux]#sysctl -w net.ipv4.tcp_syncookies=1``` 로 설정하거나 iptables 설정 ```iptables -A INPUT -p tcp --dport 80 --syn -m connlimit --connlimit-above 5 -j DROP```로 설정하거나 Backlog queue 크기 늘리거나 SYN+ACK에 대한 대기 시간 줄인다.
