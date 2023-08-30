@@ -264,40 +264,47 @@
    * 암호 명세는 대칭 암호 알고리즘, 암호키 길이, 블럭 암호 모드, HMAC용 해시 알고리즘 등으로 구성된다.
    * 예) **TLS_RSA_WITH_AES_256_CBC_SHA256** : 키교환 및 인증 알고리즘으로 RSA를 사용하고, 대칭 암호 알고리즘으로 AES를 사용하며 암호키 길이는 256 비트, 블록 암호 모드는 CBC이고, HMAC용 해시 알고리즘은 SHA-256을 사용하는 cipher suite
    * 예) **TLS_DHE_DSS_WITH_AES_256_GCM_SHA256** : 키교환 알고리즘으로 DHE(Ephemeral Diifie-Hellman), 인증/서명 알고리즘으로 DSS를 사용하고, 대칭 암호 알고리즘으로 AES를 사용하며 암호키 길이는 256비트, 블럭 암호 모드는 GCM이고, HMAC용 해시 알고리즘은 SHA-256을 사용
+5. 정리하면 Client Hello는 Client가 Server에게 Client Random(임의 난수 28+현재 날짜 및 시간 4=32byte), 암호 도구 목록(TLS_RSA_WITH_AES_256_CBC_SHA256, 등으로 대칭 암호 알고리즘, 암호키 길이, 블럭 암호 모드, HMAC용 해시 알고리즘 등으로 구성되는 목록)을 보낸다.
 
 #### (나) (Server -> Client) Server Hello 메시지
 1. 사용할 SSL/TLS 버전, 암호 도구, 압축 방식 등을 클라이언트에 전달하는 메시지
 2. 서버 랜덤
    * 서버가 생성하는 32바이트 난수값(임의 난수 28바이트+현재 날짜 및 시간 4바이트)으로 "master secret" 및 "키블럭" 생성 시 솔트 역할을 한다.
 3. 세션 ID
-   * 새롭게 생서앟거나 존재하는 세션 ID 정보
+   * 새롭게 생성하거나 존재하는 세션 ID 정보
+4. 정리하면 Server Hello는 Server가 Client에게 Server Random(임의 난수 28+현재 날짜 및 시간 4=32byte), 세션 ID 등을 보낸다.
 
 #### (다) (Server -> Client) Server Certificate 메시지
 1. 필요시 서버 인증서 목록(서버 인증서 및 인증서에 서명한 인증기관들의 인증서 목록)을 클라이언트에 전달하는 메시지
+2. 정리하면 Server Certificate는 Server가 Client에게 서버 인증서 목록(인증서 및 인증서에 서명한 인증기관들의 인증서 목록)을 전달한다.
 
 #### (라) (Server -> Client) Server Key Exchange 메시지
 1. 필요시 키 교환에 필요한 정보를 전달하는 메시지
    * 키 교환 알고리즘으로 Ephemeral Diffie-Hellman을 사용한다면 공개 Diffie-Hellman 매개변수(소수 p, 원시근 g, 서버 Diffie-Hellman 공개키)를 서명 알고리즘으로 서명하여 서명값과 함께 전달한다.
-  
+2. 정리하면 Server Key Exchange는 Server가 Client에게 임시 디피-헬만을 사용하면 Diffie-Hellman 매개변수를 서명 알고리즘으로 서명하여 서명값과 전달한다.
+
 #### (마) (Server -> Client) Certificate Request 메시지
 1. 필요시 클라이언트 인증을 위한 인증서를 요청하는 메시지
    * 요청 시에는 서버 측에서 인증 가능한 인증기관 목록을 제공한다.
+2. 정리하면 Certificate Request는 Server가 Client에게 클라이언트 인증서를 요청한다.
 
 #### (바) (Server -> Client) Server Hello Done 메시지
 1. Server Hello 과정 종료를 알리는 메시지
 
 #### (사) (Client -> Server) Client Certificate 메시지
 1. 필요시(서버의 Certificate Request 메시지) 클라이언트 인증서 목록을 전달하는 메시지
+2. 정리하면 Client Certificate는 Client가 Server에게 클라이언트 인증서 목록을 전달한다.
 
 #### (아) (Client -> Server) Client Key Exchange 메시지
-1. 키 교환에 필요한 **"사전 마스터 비밀(Premaster Secret)"**를 생성하여 서버에 전달하는 메시지로 ㅌ교환 알고리즘에 따라 사전 마스터 비밀을 생성하는 방식이 다르다.
+1. 키 교환에 필요한 **"사전 마스터 비밀(Premaster Secret)"**를 생성하여 서버에 전달하는 메시지로 교환 알고리즘에 따라 사전 마스터 비밀을 생성하는 방식이 다르다.
    * RSA 방식 : premaster secret(난수값) 생성 후 수신한 서버 인증서의 공개키를 이용하여 암호화 전송
    * Diffie-Hellman 방식 : 클라이언트 Diffie-Hellman 공개키를 생성하여 서버에 전달, 클라이언트와 서버는 각각 Diffie-Hellman 연산을 통해 공통의 premaster secret를 생성한다.
+2. 정리하면 Client Key Exchange는 Client가 Server에게 RSA 사용 시 premaster secret 난수값을 생성 후 서버 인증서의 공개키를 이용하여 암호화 전송하고 Diffie-Hellman 사용 시 클라이언트 Diffie-Hellman 공개키를 생성하여 서버에 전달, 클라이언트와 서버는 각각 DH 연산을 통해 공통의 premaster secret을 생성한다.
   
 #### (자) (Client -> Server) Certificate Verify 메시지
 1. 필요시(서버의 Certificate Request 메시지) 클라이언트가 보낸 인증서에 대한 개인키를 클라이언트가 가지고 있음을 증명하는 메시지
    * 지금까지 핸드셰이크 과정에서 주고받은 메시지와 master secret을 조합한 해시값에 클라이언트 개인키로 서명하여 전달
-
+2. 정리하면 핸드셰이크 과정에서 주고받은 메세지와 master secret을 조합한 해시값에 클라이언트 개인키로 서명하여 전달함으로 써 인증서에 대한 개인키를 클라이언트가 가지고 있음을 증명한다.
 #### (차) (Client -> Server) [Change Cipher Spec] 메시지
 1. 협상한 암호 명세(Cipher spec)를 이후부터 적용/변경함을 알리는 메시지
 
@@ -341,6 +348,7 @@
    * 일정 시간 클라이언트의 요청이 없으면 서버 측 세션 정보는 만료된다. 만료된 세션을 클라이언트가 요청하게 되면 위 예처럼 새로운 세션 ID를 생성하여 클라이언트에 전달한 후 완전 협상 과정을 수행한다.
 3. (Client -> Server) Change Cipher Spec/Finished 메시지
    * Change Cipher Spec 메시지를 통해 협상한 암호 명세를 이후부터 적용/변경함을 서버에 알리고 Finished 메시지를 통해 클라이언트 측 협상을 종료한다.
+4. 정리하면 단축 협상 과정은 Client Hello 메시지를 전송하여 session id와 client random 값을 전송한다. session id가 없다면 부여하고 완전 협상을 진행한다. Server Hello 메시지를 전송하여 server random 값을 전달하고, change cipher spec 메시지를 전송하여 협상한 암호 명세를 이후부터 적용/변경함을 알리고 finished로 서버 측 협상 종료. Client에서 Change Cipher Spec 메세지를 통해 협상한 암호 명세를 이후부터 적용/변경함을 알리고 finished로 클라이언트 측 협상 종료한다.
 
 ### 8) Record 프로토콜 동작방식
 1. 단편화
@@ -357,14 +365,18 @@
 1. 서버의 공개키와 개인키를 이용하여 키 교환을 수행할 경우(RSA 방식) 공격자는 중간자 공격(MITM)을 통해 트래픽을 가로채고 서버 개인키를 이용해 세션키/비밀키 및 송수신 데이터를 복호화할 수 있다.
 2. 희생자는 유출된 서버 인증서를 폐기해도(CRL 또는 OCSP 프로토콜을 통해) 유출된 서버 개인키로 보호되는 이전 트래픽 정보를 공격자가 보관하고 있다면 이들 모두 복호화되는 문제점이 있다.
 3. 이러한 문제점을 해결하기 위해 등장한 암호학적 성질을 순방향 비밀성 또는 완전 순방향 비밀성이라 한다.
+4. 정리하면 RSA 방식을 사용할 경우 MITM을 통해 트래픽을 가로채고 서버 개인키를 이용해 세션키/비밀키 및 송수신 데이터를 복호화할 수 있다. 인증서를 폐기해도(CRL, OCSP) 유출된 서버 개인키로 모두 복호화되는 문제점이 있는데 이 문제점을 해결하기 위해 등장한 완전 순방향 비밀성(PFS:Perfect Forward Secrecy)
 
 #### (나) 완전 순방향 비밀성(PFS)
 1. 서버 개인키가 노출되어도 이전 트래픽 정보의 기밀성은 그대로 유지되는(과거의 세션키가 노출되지 않는) 암호학적 성질을 말한다.
 2. 좀 더 구체적으로 정의해보면, **클라이언트 서버 간에 키 교환에 사용되는 서버 개인키가 노출되어도 이전 트래픽의 세션키/비밀키 기밀성은 그대로 유지되어 통신 내용을 알 수 없는 암호학적 성질**을 말한다.
+3. 정리하면 완전 순방향 비밀성(PFS)는 서버의 개인키가 노출되어도 트래픽의 세션키/비밀키 기밀성은 그대로 유지되어 통신 내용을 알 수 없다.
 
 #### (다) SSL/TLS 통신의 완전 순방향 비밀성 지원
 1. 키 교환 시마다 클라이언트/서버가 새로운 Diffie-Hellman 개인키를 생성하는 임시 디피-헬만 키 교환을 통해 클라이언트/서버간 공통의 비밀값을 생성하고 서버 개인키는 서버 Diffie-Hellman 파라미터를 인증하는 목적으로만 사용함으로써 서버 개인키가 노출되어도 통신 내용을 알 수 없는 완전 순방향 비밀성을 지원한다.
+2. 정리하면 임시 Diffie-Hellman 키 교환을 통해 클라이언트/서버간 공통의 비밀값을 생성하고 서버 개인키는 Diffie-Hellman 파라미터를 인증하는 목적으로만 사욤함으로써 개인키 노출에도 통신 내용 유출이 안된다.
 
 #### (라) 완전 순방향 비밀성만 적용하기 어려운 이유
 1. 디피-헬만 키 교환의 경우 RSA에 비해 처리 속도가 느리다. 따라서 성능상의 이유로 DHE, ECDHE 관련 cipher suite을 비활성화하는 경우가 있다.
 2. 모든 웹 브라우저에서 다양한 DHE, ECDHE 관련 cipher suite을 모두 지원하지 않기 때문에 브라우저 호환을 위해 RSA 방식의 키 교환을 함께 사용하는 경우가 있다.
+3. 정리하면 완전 순방향 비밀성만 적용하기 어려운 이유는 DH는 RSA에 비해 속도가 느리고, 모든 웹브라우저에서 DHE, ECDHE를 지원하지 않는 경우가 많아 적용하기 어렵다.
