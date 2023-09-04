@@ -378,5 +378,5 @@
 (config)# ip route 211.1.1.1 255.255.255.0 null 0
 (config)# end
 # 
-```ㄴㄴㄴㄴㄴ
-2.
+```
+2. 정리하면 blackhole 은 공격 패킷을 null네트워크 인터페이스로 보내어 버려지게 한다. config 모드에서 ```interface FastEthernet 0/0``` 명령어를 사용하여 글로벌 config 모드로 접속하여 ```no ip unreachable``` 명령어를 사용하여 icmp unreachable 을 차단하고 config 모드에서 ```ip rote [공격 패킷] [서브넷 마스크] 0``` 명령어를 사용하여 공격 패킷을 null 네트워크 인터페이스로 버린다
