@@ -67,3 +67,311 @@
 2. 인터페이스를 통해 들어오는 패킷의 소스 ip에 대해 라우팅 테이블을 확인하여 들어온 인터페이스로 다시 나가는지 확인하는 원리이다. 즉, URPF가 enable된 인터페이스에 10.10.10.10이라는 source ip를 달고 들어오는 패킷이 있다면 라우팅 테이블을 확인하여 만약 10.10.10.10이라는 목적지로 라우팅 될 때 같은 인터페이스로 나가는지 확인하여 비정상 여부를 판단한다.
 3. 정리하면 Unicast RPF(Reverse-Path Forwarding)는 만약 URPF가 enable된 인터페이스로 10.10.10.10 이라는 출발지 IP가 들어오는 패킷이 있다면 라우팅 테이블(특정 목적지에 가는 경로를 저장하고 있는 테이블)을 확인하여 10.10.10.10이라는 목적지로 라우팅될 때 같은 인터페이스로 나가는지 확인하여 비정상 여부 판단한다. 즉, 위조된 IP이면 차단한다.
 
+# 3. 라우터를 통한 네트워크 보안
+### 1) 콘솔, AUX, VTY 포트 패스워드 보안
+1. 콘솔 포트는 케이블을 이용하여 직접 터미널에 연결하여 라우터를 조작할 수 있도록 하며 장애 처리 시 많이 사용된다.
+2. 패스워드를 설정하지 않은 콘솔 포트에 접속하게 되면 일반적으로 아무런 인증 절차 없이 라우터 설정을 조회할 수 있다.
+3. 따라서 여러 사람이 콘솔을 사용하여 라우터에 접근할 가능성이 있는 경우에는 콘솔 패스워드를 반드시 설정하여야 한다.
+```
+> enable
+# conf t
+(config) # line console 0
+(config-line) # login
+(config-line) # password cisco
+(config-line) # end
+#
+```
+4. VTY 포트는 원격지에서 텔넷을 통하여 접속 시 사용되는 패스워드를 설정한다. AUX 포트는 현재 잘 사용되지 않는 포트이며 VTY 포트 설정과 동일하다.
+```
+> enable
+# conf t
+(config) # line aux 0
+(config-line) # login
+(config-line) # password cisco
+(config-line) # end
+#
+```
+```
+> enable
+# conf t
+(config) # line vty 0 4 # 0 부터 4의 의미, 5 user 접속 가능
+(config-line) # login
+(config-line) # password cisco
+(config-line) # end
+# show user # 접속한 user 확인
+```
+
+### 2) 텔넷 접근 제한
+1. 기본적으로 VTY 포트는 외부로부터의 연결 시도를 모두 받아들인다. 이러한 특징을 악용하여 무한대의 공격 시도를 통하여 라우터를 공격할 수 있다.
+2. 따라서 라우터로 들어오는 패킷의 IP 주소를 차단하여 허가된 IP를 가진 사용자에게만 연결 시도를 허용하는 것이 안전하다.
+```
+> enable
+# conf t
+(config)# access-list 10 permit host 192.168.0.1
+(config)# access-list 10 permit host 192.168.1.1
+(config)# access-list 10 deny any
+(config)# line vty 0 4
+(config-line)# access-class 10 in
+(config-line)# end
+#
+```
+3. SSH(Secure Shell)는 암호화 통신을 하고 텔넷은 평문 통신을 하므로 텔넷은 SSH에 비해 보안에 취약하여 SSH를 설정하여 사용할 것을 권장한다.
+```
+> enable
+# conf t
+(config)# hostname [router name]
+(config)# IP domain-name [domain name]
+(config)# crypto key generate rsa
+(config)# IP ssh time-out [time out value]
+(config)# IP ssh authentication-retries [retries value]
+(config)# line vty 0 4
+(config-line)# transport input ssh
+(config-line)# end
+#
+```
+
+### 3) SNMP 설정
+1. SNMP는 TCP/IP 네트워크를 모니터링하고 관리하기에 아주 효율적인 프로토콜이다. 대부분의 네트워크 장비들은 기본적으로 SNMP 서비스들을 포함하고 있어서 원격의 네트워크에 관련된 정보들을 수집할 수 있다.
+2. 많은 시스템에서 SNMP의 읽기 권한은 기본적으로 설정되어 있기에 이를 이용하려는 공격자들이 많다. 따라서 이를 위한 보안 설정이 필요하다.
+3. 기본 community string 값은 public으로 SNMP를 지원하는 많은 장비에서 기본값을 변경해야 한다.
+4. access-list를 이용하여 접근 통제를 하여야 하며 SNMP 정보 수신이 필요한 장비를 명시하여 허용하고 나머지는 차단하도록 한다.
+```
+> enable
+# conf t
+(config)# snmp-server community x27swf3 ro 11
+(config)# snmp-server contact antihong@tt.co.kr
+(config)# access-list 11 permit host 211.1.2.5
+(config)# access-list 11 deny any
+(config)# interface FastEthernet 0/0
+(config-if)# ip access-group 11 in
+(config-if)# end
+# show access-list
+```
+5. SNMP 서비스를 사용하지 않는다면 서비스를 제거하는 것이 좋다.
+```
+> enable
+# conf t
+(config)# no snmp-server
+(config)# end
+# show access-list
+```
+6. SNMP version 1, 2는 평문으로 정보를 전송하는 데 반해 **SNMP version 3**는 암호화가 지원되므로 SNMP version 3의 지원 여부를 확인하여 사용하기를 권장한다.
+
+### 4) 불필요한 서비스 제거
+#### (가) 개요
+1. 라우터는 네트워크 관리자의 편의를 위하여 기본 설정을 여러 가지 서비스들을 제공한다. 이러한 서비스들은 공격자에 의해서 네트워크 정보를 얻거나 접근하는 수단으로 사용될 수 있다.
+2. 따라서 불필요한 서비스는 보안 위협 요소가 될 수 있으므로 모두 차단하는 것이 좋다.
+
+#### (나) ICMP
+1. ICMP MTU Discovery
+   * 데이터링크 계층에서 source와 destination 사이를 지나는 패킷 크기를 조절해 주는 역할을 한다. 따라서 ICMP 패킷을 차단하더라도 MTU discovery를 제공하는 패킷은 허용해야 네트워크가 제대로 동작할 수 있다.
+   * 아래와 같은 ACL을 적용하게 되면 MTU discovery를 담당하는 패킷인 ICMP type 3, type 4 패킷만을 허용하고 다른 ICMP 패킷은 모두 차단할 수 있다.
+```
+> enable
+# conf t
+(config)# access-list 103 permit icmp any any 3 4
+(config)# access-list 103 deny icmp any any
+(config)# access-list 103 permit ip any any
+(config)# interface FastEthernet 0/0
+(config-if)# ip access-group 103 in
+(config-if)# end
+# 
+```
+2. ICMP Redirects
+   * 악의적인 공격자들은 ICMP Redirect를 전송하여 네트워크를 지나는 패킷의 방향을 바꿔서 정보 수집이 가능하므로 차단하는 것을 권장한다.
+   * 라우터의 인터페이스로 ICMP Redirect 패킷이 들어오는 것을 차단
+```
+> enable
+# conf t
+(config)# interface FastEthernet 0/0
+(config-if)# no ip redirects
+(config-if)# end
+#
+```
+3. ICMP Directed Broadcasts
+   * 라우터에 directed-broadcast를 허용하면 외부에서 브로드캐스트 주소로 특정 패킷(e.g. ICMP Echo Request 메시지)을 전송하여 해당 네트워크의 모든 호스트에 전달할 수 있다. 공격자가 도스나 디도스 공격에 악용할 수 있으므로(e.g. smurt 공격) 차단을 권장한다.
+```
+> enable
+# conf t
+(config)# interface FastEthernet 0/0
+(config-if)# no ip directed-broadcast
+(config-if)# end
+#
+```
+4. ICMP Mask Reply
+   * 라우터가 해당하는 네트워크의 서브넷 마스크를 전송하도록 한다. 공격자는 이 기능을 이용하여 네트워크의 구성을 알아낼 수 있으므로 이 기능은 차단하는 것이 권장된다.
+```
+> enable
+# conf t
+(config)# interface FastEthernet 0/0
+(config-if)# no ip mast-reply
+(config-if)# end
+#
+```
+5. ICMP Unreachable
+   * 공격자에 의해 시도되는 많은 스캐닝 기법들은 ICMP Unreachable 메시지를 이용하여 스캔하는 라우터 혹은 호스트의 특정 포트가 열려있는지를 판단한다.
+   * ICMP Unreachable를 차단하게 되면 공격자는 공격 대상의 상태에 대한 정보를 얻을 수 없으며 스캐닝에 소요되는 시간도 길어지기 때문에 차단을 권장한다.
+```
+> enable
+# conf t
+(config)# interface FastEthernet 0/0
+(config-if)# no ip unreachables
+(config-if)# end
+#
+```
+6. ICMP Timestamp and Information Requests
+   * 네트워크 관리자가 많이 사용하는 정보는 아니지만, 공격자로 하여금 네트워크 현황을 알 수 있게 하는 취약점이므로 이 두 개의 서비스를 모두 차단할 것을 권장한다.
+```
+> enable
+# conf t
+(config)# access-list 102 dney icmp any any timestamp-request
+(config)# access-list 102 deny icmp any any information-request
+(config)# access-list 102 permit ip any any
+(config)# interface FastEthernet 0/0
+(config-if)# access-group 102 in
+(config-if)# end
+#
+```
+
+#### (다) Source Route
+1. Source Route란 패킷이 전송되는 경로를 각각의 시스템이나 네트워크에 설정된 라우팅 경로를 통하지 않고 패킷의 발송자가 설정할 수 있는 기능이다. 악용될 소지가 있으므로 중지한느 것이 좋다.
+```
+> enable
+# conf t
+(config)# no ip source-route
+(config)# end
+#
+```
+
+#### (라) Small Service
+1. 시스코 라우터에 사용되고 있는 IOS 버전에 따라서 TCP, UDP Small Services가 자동으로 설정되어 실행된다. 이러한 서비스로는 echo, discard, daytime 등 20번 이하 포트를 사용하고 있으며 네트워킹에 특별히 중요한 역할을 담당하지는 않기에 모두 차단하는 것이 권장된다.
+```
+> enable
+# conf t
+(config)# no service tcp-small-servers
+(config)# no service udp-small-servers
+(config)# end
+#
+```
+
+#### (마) Finger 서비스
+1. 원격의 사용자로 하여금 어떤 사용자가 라우터에 접속해 있는지를 알려주는 역할을 한다. 이는 라우터에 로그인할 수 있는 사용자 이름을 비롯한 중요한 정보를 제공하기에 공격자들이 많이 사용하는 서비스 중의 하나이므로 차단을 권장하낟.
+```
+> enable
+# conf t
+(config)# no service finger
+(config)# end
+#
+```
+
+#### (바) HTTP Server 서비스
+1. 라우터에 HTTP 서비스가 설정되어 있으면 웹을 통해 라우터의 설정을 조회하거나 변경할 수 있는데, 이는 보안상 문제가 될 뿐만 아니라 라우터의 HTTP Server 자체가 취약성을 가지고 있으므로 중지하는 것이 좋다.
+```
+> enable
+# conf t
+(config)# no ip http server
+(config)# end
+#
+```
+
+#### (사) CDP 서비스
+1. LAN 구간에서 직접 연결된 시스코 장비들 사이에서 서로의 정보를 얻기 위해 사용되는 프로토콜이다. CDP는 라우터에 연결된 장비들의 종류와 설정을 보여주기에 전체 네트워크 구성을 파악할 때 많이 사용한다. 그러나 이는 공격자에게도 유용한 정보를 제공하기에 차단을 권장한다.
+```
+> enable
+# conf t
+(config)# no cdp run
+(config)# interface FastEthernet 0/0
+(config-if)# no cdp enable
+(config-if)# end
+#
+```
+
+#### (아) proxy-arp 서비스
+1. 디폴트 라우터나 게이트웨이를 가지고 있지 않은 네트워크의 호스트들에게 ARP 서비스를 제공하는 역할을 한다. 이 경우에 호스트가 목적지 IP 주소에 대한 MAC 주소를 요청하면 Proxy ARP가 설정된 라우터가 이에 응답하여 자신의 MAC 주소를 목적지 MAC 주소인 것처럼 전송한다.
+2. 공격자들은 패킷의 주소를 위조하여 Proxy ARP를 요청할 수 있으며 라우터가 이에 응답하는 것을 이용하여 라우터와 네트워크에 관련된 정보를 획득할 수 있으므로 차단을 권장한다.
+```
+> enable
+# conf t
+(config)# interface FastEthernet 0/0
+(config-if)# no ip proxy-arp
+(config-if)# end
+#
+```
+
+#### (자) 기타 불필요한 서비스 차단
+1. BootP
+2. DNS
+3. Network authloading of configuration files
+4. PAD - packet assembly/disassembly
+5. IP Classless
+6. 사용하지 않는 interface는 반드시 shutdonw 하는 것을 권장한다.
+
+### 5) 입/출력 IP 보안 설정
+1. 외부에서 내부로 유입되는 IP 주소가 내부의 IP 주소라면 이는 공격자에게 악용된다고 보아야 하며 이를 차단되어야 한다.
+```
+> enable
+# conf t
+(config)# access-list 15 deny 130.18.0.0 0.0.0.255 # 내부 IP 주소가 130.18.0.0인 경우
+(config)# access-list 15 permit any
+(config)# interface FastEthernet 0/0
+(config)# ip access-group 15 in
+(config)# end
+#
+```
+2. 외부로부터 유입되는 IP 주소 중 예약된 IP 주소가 있다면 차단하는 것을 권장한다.
+3. 다음과 같은 예약된 IP 주소는 차단하도록 한다.
+```
+> enable
+# conf t
+(config)# access-list 15 deny 127.0.0.0 0.255.255.255  # 127.0.0.0/8
+(config)# access-list 15 deny 10.0.0.0 0.255.255.255  # 10.0.0.0/8
+(config)# access-list 15 deny 172.16.0.0 0.15.255.255  # 172.16.0.0/12
+(config)# access-list 15 deny 192.168.0.0 0.0.255.255  # 192.168.0.0/16
+(config)# access-list 15 deny 224.0.0.0 15.255.255.255  # 224.0.0.0/4
+(config)# access-list 15 deny 240.0.0.0 7.255.255.255  # 240.0.0.0/3
+(config)# access-list 15 deny 255.255.255.255 0.0.0.0  # 255.255.255.255/32
+(config)# access-list 15 permit any
+(config)# interface FastEthernet 0/0
+(config-if)# ip access-group 15 in
+(config)# end
+#
+```
+4. 내부에서 외부로 유출되는 IP 주소가 위변조되어 출력되는 것을 차단한다.
+5. ACL을 이용하여 내부 네트워크 IP 주소를 가진 패킷만 라우터로부터 전송되는 것을 허용하고 나머지 패킷들은 모두 차단하도록 한다.
+```
+# 내부 IP 주소가 130.218.0.0인 경우
+> enable
+# conf t
+(config)# access-list 16 permit 130.218.0.0 0.0.255.255
+(config)# access-list 16 deny any
+(config)# interface FastEthernet 0/0
+(config-if)# IP access-group 16 out
+(config-if)# end
+#
+```
+
+### 6) 주소 위변조 방지
+#### (가) Unicast RPF
+1. 인터페이스로 유입되는 출발지 IP 주소를 라우팅 정보를 이용하여 점검하고 내부로 유입되어 reverse path가 존재하면 패킷을 통과시키고, reverse path가 존재하지 않으면 그 IP 주소를 출발지 주소가 위조된 패킷으로 판단하고 차단한다.
+```
+> enable
+# conf t
+(config)# interface FastEthernet 0/0
+(config-if)# ip verify unicast reverse-path
+(config-if)# end
+#
+```
+
+### 7) BlackHole 보안 설정
+1. DDoS 공격에 대응하는 방법으로 특정 목적지로 DDoS 공격으로 네트워크 트래픽이 과도하게 발생할 경우 해당 목적지 IP를 망 내에서 통신할 수 없도록 차단한다.
+```
+# 211.1.1.1 ip 차단
+> enable
+# conf t
+(config)# interface FastEthernet 0/0
+(config-if)# no ip unreachable
+(config-if)# exit
+(config)# ip route 211.1.1.1 255.255.255.0 null 0
+(config)# end
+# 
+```
