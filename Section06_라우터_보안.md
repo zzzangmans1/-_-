@@ -100,6 +100,7 @@
 (config-line) # end
 # show user # 접속한 user 확인
 ```
+4. 정리하면 console 과 aux는 config 모드에서 ```line [console or aux] 0``` 명령어로 접속하여 ```password [password]``` 명령어로 패스워드를 설정한다. vty 는 config 모드에서 ```line vty 0 4``` 명령어로 접속하여 ```password [password]``` 명령어로 패스워드를 설정하고 enable 모드에서 ```show user``` 명령어로 접속한 user를 확인합니다.
 
 ### 2) 텔넷 접근 제한
 1. 기본적으로 VTY 포트는 외부로부터의 연결 시도를 모두 받아들인다. 이러한 특징을 악용하여 무한대의 공격 시도를 통하여 라우터를 공격할 수 있다.
@@ -129,6 +130,7 @@
 (config-line)# end
 #
 ```
+4. 정리하면 텔넷 접근 제한은 예를 들어 특정 주소만 허용하려면 ``` access-list 10 permit 192.168.0.1 access-list 10 deny any``` 명령어를 사용하여 access-list 를 입력하고 config 모드에서 ```line vty 0 4``` vty 모드로 접속하고 ```access-class 10 in``` 명령어를 사용하여 접근 제한한다. SSH는 config 모드에서 ``` hostname [router name]``` ```IP domain-name [domain name]``` ```crypto key generate rsa``` ```IP ssh time-out [time out value]``` ```IP ssh authentication-retries [retries value]``` 명령어를 입력하고 config 모드에서 ```line vty 0 4``` vty 모드로 접속하고 ```transport input ssh``` 명령어를 사용하여 ssh 사용한다.
 
 ### 3) SNMP 설정
 1. SNMP는 TCP/IP 네트워크를 모니터링하고 관리하기에 아주 효율적인 프로토콜이다. 대부분의 네트워크 장비들은 기본적으로 SNMP 서비스들을 포함하고 있어서 원격의 네트워크에 관련된 정보들을 수집할 수 있다.
@@ -156,6 +158,7 @@
 # show access-list
 ```
 6. SNMP version 1, 2는 평문으로 정보를 전송하는 데 반해 **SNMP version 3**는 암호화가 지원되므로 SNMP version 3의 지원 여부를 확인하여 사용하기를 권장한다.
+7. 정리하면 SNMP 는 읽기 권한과 community string의 public 값이 기본으로 설정되어 있어 변경해줘야 한다. config 모드에서 ```snmp-server community [패스워드] ro(readonly) [acl 번호]``` 명령어를 통해 community string 설정하고 ```contact``` 명령어를 사용하여 사용자 등록하고 ```ip access-group [acl 번호] [in or out]``` 으로 설정한다. snmp 서비스 제거방법은 config 모드에서 ```no snmp-server``` 명령어를 사용하여 제거한다.
 
 ### 4) 불필요한 서비스 제거
 #### (가) 개요
@@ -361,6 +364,7 @@
 (config-if)# end
 #
 ```
+2. 정리하면 Unicast RPF 은 거꾸로 패킷을 보내어 출발지가 존재하는지 확인하는 것이며 설정하는 방법은 config 모드에서 ```interface FastEthernet 0/0``` 으로 글로벌 config 모드로 접속하여 ```ip verify unicast reverse-path``` 명령어를 사용하여 설정한다.
 
 ### 7) BlackHole 보안 설정
 1. DDoS 공격에 대응하는 방법으로 특정 목적지로 DDoS 공격으로 네트워크 트래픽이 과도하게 발생할 경우 해당 목적지 IP를 망 내에서 통신할 수 없도록 차단한다.
@@ -374,4 +378,5 @@
 (config)# ip route 211.1.1.1 255.255.255.0 null 0
 (config)# end
 # 
-```
+```ㄴㄴㄴㄴㄴ
+2.
