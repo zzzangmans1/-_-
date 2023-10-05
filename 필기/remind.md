@@ -3,6 +3,11 @@
 2. 운영체제가 작동하는 한 접근할 수 없도록 잠겨져 있다.
 3. 레지스트리 HKEY_LOCAL_MACHINE/SAM에 구체화된 자료들을 실제로 저장한다.
 
+## SRM (Security Reference Monitor)
+1. 사용자에게 SID를 부여한다.
+2. SID에 기반하여 파일이나 디렉토리에 대한 접근 허용 여부를 결정한다.
+3. 이에 대한 감사 메시지를 생성한다.
+
 ## SCAN
 * 엘리베이터 알고리즘이라고 불리는 디스크 스케줄링 알고리즘이다.
 
@@ -15,13 +20,15 @@
 2. 보안사고 통제 영역
 3. 보안사고 치료 영역
 
-## 리눅스 로그
-1. secure 로그 : 사용자의 원격 로그인 정보를 저장
-2. dmesg 로그 : 시스템 부팅 관련 시스템 메시지 저장
-3. lastlog 로그 : 사용자가 로그인한 마지막 로그 저장
-4. utmp 로그 : 현재 로그인한 사용자 정보
-5. wtmp 로그 : 성공한 로그인/로그아웃 정보
-6. btmp 로그 : 로그인 실패 정보
+## 리눅스
+* 로그
+  1. secure 로그 : 사용자의 원격 로그인 정보를 저장
+  2. dmesg 로그 : 시스템 부팅 관련 시스템 메시지 저장
+  3. lastlog 로그 : 사용자가 로그인한 마지막 로그 저장
+  4. utmp 로그 : 현재 로그인한 사용자 정보
+  5. wtmp 로그 : 성공한 로그인/로그아웃 정보
+  6. btmp 로그 : 로그인 실패 정보
+* Capabilities : 실행 바이너리에 커널 모듈을 올리거나 내릴 수 있는 권한을 할당할 수 있는 Capability 는 CAP_SYS_MODULE
 
 ## AI 보안
 1. Membership inversion 공격 : 특정 데이터가 모델의 훈련에 속하는지 확인
@@ -71,6 +78,7 @@
 * SET_PROCESS_LIMIT : 제한처리 지정 권한
 * LOADER_USAGE_STATS : 액세스 로그 읽기 권한
 * ACCESS_CHECIN_PROPERTIES : 체크인 데이터베이스의 속성테이블 액세스 권한
+* adb를 접속 후 쓰기 가능한 디렉터리는 ```/data/local/tmp```
 
 ## SMTP
 * 인증절차 후 메일 발송 절차 EHLO > AUTH > RCPT > MAIL > DATA > QUIT
@@ -130,4 +138,50 @@
 ## 정량적 위험분석
 * 과거 자료 분석법
 
+## 하드닝
+1. 사용하지 않는 PDF 소프트웨어 제거
+2. 감사 기능과 로깅 기능 활성화
+3. 보안 업데이트 수행
 
+## 최악 적합
+* 입력된 프로그램을 수용할 수 있는 공간 중 가장 큰 공간을 할당한다.
+
+## 레이스 컨디션 
+* 임시파일 생성 후 공격 실행
+
+## iptables
+* ```alert tcp any any -> any any (content :"|FF FF|:" offset:9; depth:2; msg:"Error"; sid: 1000000;)``` 10~11 번째의 2바이트 값이 0xFFFF 인지 확인
+
+## 파일시스템 터널링
+* Windows에서 파일이 삭제된 직후 일정 시간안에 동일한 이름의 파일이 생성되는 경우 방금 삭제된 파일의 테이블 레코드를 재사용하는 경우
+
+## 레지스트리
+1. 시스템 구성정보를 저장하는 데이터베이스로 SYSTEM.DAT, USER.DAT 파일을 말한다.
+2. 레지스트리는 regedit.exe 전용 편집기에 의해서만 편집이 가능하다.
+3. 윈도우 레지스트리 키는 HKEY_CLASS_ROOT, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, HKEY_USERS 등이 있다.
+4. 레지스트리 백업 및 복구는 shell.exe를 구동하여 행한다.
+
+## traceroute
+* UDP 패킷을 TTL=1 부터 하나씩 늘려가면서 전송하고 도달하면 ICMP Port Unreachable(Type 3)으로 응답
+
+## UDP Flooding 대응 방안
+1. 미사용 프로토콜 필터링
+2. 패킷 크기 기반 차단
+3. Anycast를 이용한 대응
+
+## sentinal
+* -d -a -e 모두 쓰면 3개 테스트를 다 한다. -a 는 ARP 테스트, -d 는 DNS 테스트 -e 는 Etherping 테스트
+
+## 시스코 라우터
+* show process : CPU 사용률 보는 명령어
+* show controllers : 라우터 하드웨어 정보 보는 명령어
+* show memory : 메모리의 전체 용량, 사용량, 남은 용량 확인 명령어
+
+## 해커 분류
+* Developed Kiddie : 성공된 해킹에 대해 자랑하고, 취약점 새로 발견하거나 주어진 상황에 맞게 바꿀만한 능력 없음
+
+## SNMP Community String
+1. 기본적으로 Public, Private 으로 설정된 경우가 많다.
+2. 모든 서버 및 클라이언트에서 동일한 커뮤니티 스트링을 사용해야만 한다.
+3. MIB 정보를 주고 받기 위하여 커뮤니티 스트링을 사용한다.
+4. 유닉스 환경에서 관리자 권한으로 설정한다.
